@@ -43,7 +43,7 @@ def create_queue():
 	body = request.get_json(force=True)
 	name = body["name"]
 	queue = conn.create_queue(name)
-	resp = json.dumps("Queue created")
+	resp = json.dumps("Queue " + name + " created\n")
 	return Response(response=resp,mimetype="application/json")
 
 @app.route("/queues/<name>", methods=["DELETE"])
@@ -51,15 +51,14 @@ def delete_queue(name):
 	conn = get_conn()
 	queue = conn.get_queue(name)
 	conn.delete_queue(queue)
-	resp = json.dumps("Queue " + name + " deleted")
+	resp = json.dumps("Queue " + name + " deleted\n")
         return Response(response=resp,mimetype="application/json")
 
 @app.route("/queues/<name>/msgs/count", methods=["GET"])
 def number_of_messages(name):
 	conn = get_conn()
 	queue = conn.get_queue(name)
-	messages = queue.get_messages()
-	resp = json.dumps(str(len(messages)))
+	resp = json.dumps("Number of messages: " + str(queue.count()))
 	return Response(response=resp,mimetype="application/json")
 
 @app.route("/queues/<name>/msgs", methods=["POST"])
@@ -67,10 +66,10 @@ def write_message(name):
 	conn = get_conn()
 	m = Message()
 	body = request.get_json(force=True)
-	m.set_body(body['content'])
+	m.set_body(body["content"])
 	queue = conn.get_queue(name)
 	queue.write(m)
-	resp = json.dumps("Message written")
+	resp = json.dumps("Message written\n")
         return Response(response=resp,mimetype="application/json")
 
 @app.route("/queues/<name>/msgs", methods=["GET"])
@@ -78,8 +77,8 @@ def read_message(name):
 	conn = get_conn()
 	queue = conn.get_queue(name)
 	messages = queue.get_messages()
-	if len(messages) > 0:
-		resp = json.dumps(messages[0].get_body())
+	if queue.count() > 0:
+		resp = json.dumps("Message: " + messages[0].get_body())
 	else:
 		resp = json.dumps("No messages")
 	return Response(response=resp,mimetype="application/json")
@@ -90,7 +89,7 @@ def consume_message(name):
 	queue = conn.get_queue(name)
 	messages = queue.get_messages()
 	if len(messages) > 0:
-		resp = json.dumps(messages[0].get_body())
+		resp = json.dumps("Message: " + messages[0].get_body())
 		queue.delete_message(messages[0])
 	else:
 		resp = json.dumps("No messages")
@@ -98,4 +97,4 @@ def consume_message(name):
 	
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0")
+    app.run(host="0.0.0.0", debug=True)
